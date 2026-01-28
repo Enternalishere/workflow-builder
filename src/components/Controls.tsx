@@ -1,4 +1,3 @@
-import React from 'react';
 import { useWorkflow } from '../context/WorkflowContext';
 import styles from '../styles/Workflow.module.css';
 

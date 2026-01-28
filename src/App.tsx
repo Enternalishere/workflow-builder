@@ -1,4 +1,3 @@
-import React from 'react';
 import { WorkflowProvider } from './context/WorkflowContext';
 import WorkflowCanvas from './components/WorkflowCanvas';
 import './index.css';
