@@ -1,0 +1,351 @@
+.canvas {
+  display: flex;
+  justify-content: center;
+  padding: 50px;
+  min-height: 100vh;
+  overflow: auto;
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.nodeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.nodeCard {
+  background: white;
+  border: 2px solid var(--node-border);
+  border-radius: 8px;
+  padding: 10px 15px;
+  min-width: 120px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.nodeCard:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.nodeCard.start {
+  border-radius: 20px;
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  font-weight: bold;
+}
+
+.nodeCard.action {
+  border-left: 4px solid var(--primary-color);
+}
+
+.nodeCard.branch {
+  border-left: 4px solid #f59e0b;
+}
+
+.nodeCard.end {
+  border-radius: 20px;
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  border-left: 4px solid var(--danger-color);
+}
+
+.lineVertical {
+  width: 2px;
+  height: 20px;
+  background-color: #cbd5e1;
+}
+
+.branchChildren {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  position: relative;
+  padding-top: 20px; /* Space for the horizontal bar */
+}
+
+/* Horizontal Connector Logic */
+.branchChildren::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 20px;
+  background-color: #cbd5e1;
+}
+
+/* The horizontal bar connecting children */
+/* We can't easily do a single bar div without JS measuring. 
+   So we use the pseudo-elements on children. 
+*/
+
+.childColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Vertical line up from child to the bar level */
+.childColumn::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 2px;
+  height: 20px;
+  background-color: #cbd5e1;
+}
+
+/* Horizontal bar segments */
+.childColumn::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  height: 2px;
+  background-color: #cbd5e1;
+}
+
+/* First child: bar goes from center to right */
+.branchChildren > .childColumn:first-child::after {
+  left: 50%;
+  width: 50%;
+  /* However, we need to account for gap. width: 50% of self + half gap? 
+     No, this only covers the child's own width. 
+     If we want to connect to the sibling, we need to extend.
+     Actually, if we have 2 children, 
+     First child: right: -20px (half gap)?
+     
+     Let's try a simpler way: 
+     The parent .branchChildren has a border-top? No.
+     
+     If we assume 2 children exactly (for now):
+     First child: width: calc(50% + 20px) (half gap). 
+     But gap is space between items.
+     
+     Alternative: The horizontal bar is a separate div in JSX?
+     In NodeRenderer, I added <div className={styles.branchBar} />.
+     Let's style that.
+  */
+}
+
+/* Resetting pseudo elements for now to use the branchBar approach if possible, 
+   but branchBar as a static div in flow is hard.
+   Let's stick to the ::after approach which is robust for trees.
+   
+   If we have 2 children:
+   Left child needs bar to the right.
+   Right child needs bar to the left.
+*/
+
+.branchChildren > .childColumn::after {
+    /* Default: full width? No. */
+    display: none;
+}
+
+/* Only apply to branch children */
+.branchChildren > .childColumn:first-child::after {
+    display: block;
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: 0; /* Starts from right edge? No. */
+    left: 50%; /* Starts from center */
+    width: calc(50% + 20px); /* 50% of self + half gap (40px/2) */
+    height: 2px;
+    background-color: #cbd5e1;
+}
+
+.branchChildren > .childColumn:last-child::after {
+    display: block;
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: 50%;
+    width: calc(50% + 20px);
+    height: 2px;
+    background-color: #cbd5e1;
+}
+
+/* This works for exactly 2 children with gap 40px */
+
+.singleChild {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.branchLabel {
+  font-size: 10px;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  position: absolute;
+  top: -30px; /* Above the line? */
+  z-index: 5;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.addBtnContainer {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 20;
+}
+
+.addBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px dashed #94a3b8;
+  background: white;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.addBtn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: #eff6ff;
+}
+
+.controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.btn:hover {
+  background: #f8fafc;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.btnPrimary:hover {
+  background: #2563eb;
+}
+
+.input {
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: inherit;
+  font-size: inherit;
+  width: 100%;
+  outline: none;
+}
+
+.input:focus {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  background: var(--danger-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.nodeCard:hover .deleteBtn {
+  opacity: 1;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.modalTitle {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.nodeOption {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nodeOption:hover {
+  border-color: var(--primary-color);
+  background: #eff6ff;
+}
+
+.icon {
+  margin-right: 10px;
+  font-size: 18px;
+}
